@@ -110,3 +110,18 @@ sys_dump(void)
   }  
   return dump(pid, addr, buff, size);
 }
+
+int
+sys_thread_create(void){
+  return 1;
+}
+
+int 
+sys_thread_join(void){
+  return 1;
+}
+
+int
+sys_thread_exit(void){
+  return 1;
+}

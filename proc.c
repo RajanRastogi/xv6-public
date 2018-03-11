@@ -539,6 +539,22 @@ dump(int pid, void* addr, void* buff, int sz){
   return gp;
 }
 
+int
+//thread_create(void (*fcn)(void*), void *arg, void* stack){
+thread_create(void){
+  return 1;
+}
+
+int
+thread_join(void){
+  return 1;
+}
+
+int
+thread_exit(void){
+  return 1;
+}
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
