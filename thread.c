@@ -64,6 +64,29 @@ release(struct spinlock *lk)
   popcli();
 }
 
+void
+pushcli(void)
+{
+  int eflags;
+
+  eflags = readeflags();
+  cli();
+  if(mycpu()->ncli == 0)
+    mycpu()->intena = eflags & FL_IF;
+  mycpu()->ncli += 1;
+}
+
+void
+popcli(void)
+{
+  if(readeflags()&FL_IF)
+    panic("popcli - interruptible");
+  if(--mycpu()->ncli < 0)
+    panic("popcli");
+  if(mycpu()->ncli == 0 && mycpu()->intena)
+    sti();
+}
+
 volatile unsigned int delay (unsigned int d) {
    unsigned int i; 
    for (i = 0; i < d; i++) {
