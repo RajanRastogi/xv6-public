@@ -8,28 +8,30 @@ struct balance {
     int amount;
 };
 
-struct thread_spinlock {
+struct thread_mutex {
   uint locked;
 } lock;
 
 volatile int total_balance = 0;
 
 void
-initlock(struct thread_spinlock *lk, char *name)
+initlock(struct thread_mutex *lk, char *name)
 {
   lk->locked = 0;
 }
 
 void
-acquire(struct thread_spinlock *lk)
+acquire(struct thread_mutex *lk)
 {
   // The xchg is atomic.
-  while(xchg(&lk->locked, 1) != 0){}
+  while(xchg(&lk->locked, 1) != 0){
+   sleep(1);
+  }
 }
 
 // Release the lock.
 void
-release(struct thread_spinlock *lk)
+release(struct thread_mutex *lk)
 {
   asm volatile("movl $0, %0" : "+m" (lk->locked) : );
 }
@@ -44,20 +46,20 @@ volatile unsigned int delay (unsigned int d) {
 }
 
 void
-thread_spin_init(struct thread_spinlock *lk)
+thread_spin_init(struct thread_mutex *lk)
 {
   char* name = "lock";
   initlock(lk, name);
 }
 
 void 
-thread_spin_lock(struct thread_spinlock *lk)
+thread_spin_lock(struct thread_mutex *lk)
 {
   acquire(lk);
 }
 
 void
-thread_spin_unlock(struct thread_spinlock *lk)
+thread_spin_unlock(struct thread_mutex *lk)
 {
   release(lk);
 }

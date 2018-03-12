@@ -176,6 +176,7 @@ UPROGS=\
 	_zombie\
 	_dump\
         _thread\
+        _thread_mutex\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
