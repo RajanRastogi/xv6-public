@@ -112,16 +112,34 @@ sys_dump(void)
 }
 
 int
-sys_thread_create(void){
-  return 1;
+sys_thread_create(void)
+{
+  int func;
+  int arg;
+  int stack;
+
+
+  if(argint(0, &func) < 0){
+     return -1;
+  }
+
+  if(argint(1, &arg) < 0){
+     return -1;
+  }
+
+  if(argint(2, &stack) < 0){
+     return -1;
+  }
+  
+  return thread_create((void (*)(void *))func, (void*)arg, (void*)stack);
 }
 
 int 
 sys_thread_join(void){
-  return 1;
+  return thread_join();
 }
 
 int
 sys_thread_exit(void){
-  return 1;
+  return thread_exit();
 }
