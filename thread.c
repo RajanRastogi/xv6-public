@@ -1,6 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "spinlock.h"
 
 struct balance {
     char name[32];
@@ -8,6 +9,15 @@ struct balance {
 };
 
 volatile int total_balance = 0;
+
+void
+initlock(struct spinlock *lk, char *name)
+{
+  lk->name = name;
+  lk->locked = 0;
+  lk->cpu = 0;
+}
+
 
 volatile unsigned int delay (unsigned int d) {
    unsigned int i; 
