@@ -8,7 +8,31 @@ struct balance {
     int amount;
 };
 
+struct thread_spinlock {
+  uint locked;
+} lock;
+
 volatile int total_balance = 0;
+
+void
+initlock(struct thread_spinlock *lk, char *name)
+{
+  lk->locked = 0;
+}
+
+void
+acquire(struct thread_spinlock *lk)
+{
+  // The xchg is atomic.
+  while(xchg(&lk->locked, 1) != 0){}
+}
+
+// Release the lock.
+void
+release(struct thread_spinlock *lk)
+{
+  asm volatile("movl $0, %0" : "+m" (lk->locked) : );
+}
 
 volatile unsigned int delay (unsigned int d) {
    unsigned int i; 
@@ -19,6 +43,25 @@ volatile unsigned int delay (unsigned int d) {
    return i;   
 }
 
+void
+thread_spin_init(struct thread_spinlock *lk)
+{
+  char* name = "lock";
+  initlock(lk, name);
+}
+
+void 
+thread_spin_lock(struct thread_spinlock *lk)
+{
+  acquire(lk);
+}
+
+void
+thread_spin_unlock(struct thread_spinlock *lk)
+{
+  release(lk);
+}
+
 void do_work(void *arg){
     int i; 
     int old;
@@ -27,11 +70,11 @@ void do_work(void *arg){
     printf(1, "Starting do_work: s:%s\n", b->name);
 
     for (i = 0; i < b->amount; i++) { 
-         //thread_spin_lock(&lock);
+         thread_spin_lock(&lock);
          old = total_balance;
          delay(100000);
          total_balance = old + 1;
-         //thread_spin_unlock(&lock);
+         thread_spin_unlock(&lock);
     }
   
     printf(1, "Done s:%x\n", b->name);
@@ -50,6 +93,8 @@ int main(int argc, char *argv[]) {
 
   s1 = malloc(4096);
   s2 = malloc(4096);
+
+  thread_spin_init(&lock);
 
   t1 = thread_create(do_work, (void*)&b1, s1);
   t2 = thread_create(do_work, (void*)&b2, s2); 

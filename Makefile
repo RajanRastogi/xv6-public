@@ -177,6 +177,10 @@ UPROGS=\
 	_dump\
         _thread\
         _thread_mutex\
+        _thread_spin\
+        _condition_variables\
+        _private_thread_variables\
+        _cute_macro\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
