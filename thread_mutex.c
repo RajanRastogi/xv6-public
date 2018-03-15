@@ -46,20 +46,20 @@ volatile unsigned int delay (unsigned int d) {
 }
 
 void
-thread_spin_init(struct thread_mutex *lk)
+thread_mutex_init(struct thread_mutex *lk)
 {
   char* name = "lock";
   initlock(lk, name);
 }
 
 void 
-thread_spin_lock(struct thread_mutex *lk)
+thread_mutex_lock(struct thread_mutex *lk)
 {
   acquire(lk);
 }
 
 void
-thread_spin_unlock(struct thread_mutex *lk)
+thread_mutex_unlock(struct thread_mutex *lk)
 {
   release(lk);
 }
@@ -72,11 +72,11 @@ void do_work(void *arg){
     printf(1, "Starting do_work: s:%s\n", b->name);
 
     for (i = 0; i < b->amount; i++) { 
-         thread_spin_lock(&lock);
+         thread_mutex_lock(&lock);
          old = total_balance;
          delay(100000);
          total_balance = old + 1;
-         thread_spin_unlock(&lock);
+         thread_mutex_unlock(&lock);
     }
   
     printf(1, "Done s:%x\n", b->name);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
   s1 = malloc(4096);
   s2 = malloc(4096);
 
-  thread_spin_init(&lock);
+  thread_mutex_init(&lock);
 
   t1 = thread_create(do_work, (void*)&b1, s1);
   t2 = thread_create(do_work, (void*)&b2, s2); 
