@@ -262,36 +262,45 @@ iappend(uint inum, void *xp, int n)
   uint indirect[NINDIRECT];
   uint x;
 
+  // Read inode number inum into &din
   rinode(inum, &din);
+  // inode might already have some data, offset is the last byte it has
   off = xint(din.size);
-  // printf("append inum %d at off %d sz %d\n", inum, off, n);
+  // While we have bytes to write into the inode, loop 
   while(n > 0){
+    // Get the block number of the last block from the offset
     fbn = off / BSIZE;
     assert(fbn < MAXFILE);
-    if(fbn < NDIRECT){
-      if(xint(din.addrs[fbn]) == 0){
-        din.addrs[fbn] = xint(freeblock++);
-      }
-      x = xint(din.addrs[fbn]);
-    } else {
-      if(xint(din.addrs[NDIRECT]) == 0){
-        din.addrs[NDIRECT] = xint(freeblock++);
-      }
-      rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
-      if(indirect[fbn - NDIRECT] == 0){
-        indirect[fbn - NDIRECT] = xint(freeblock++);
-        wsect(xint(din.addrs[NDIRECT]), (char*)indirect);
-      }
-      x = xint(indirect[fbn-NDIRECT]);
+    // oh no... it's an indirect block 
+    if(xint(din.addrs[0]) == 0){
+      // was first level of indirection allocated? 
+      din.addrs[0] = xint(freeblock++);
     }
+    // read the sector that contains the 1 level indirect table 
+    // into indirect
+    rsect(xint(din.addrs[0]), (char*)indirect);
+    // check if the entry already allocated in the table
+    if(indirect[fbn] == 0){
+      // not allocated, allocate a new block and update 
+      // the first level indirect table
+      indirect[fbn] = xint(freeblock++);
+      // write first level table back to disk
+      wsect(xint(din.addrs[0]), (char*)indirect);
+    }
+    // get the sector number
+    x = xint(indirect[fbn]); 
     n1 = min(n, (fbn + 1) * BSIZE - off);
+    // read sector
     rsect(x, buf);
+    //copy data into buf
     bcopy(p, buf + off - (fbn * BSIZE), n1);
+    // write back the sector
     wsect(x, buf);
     n -= n1;
     off += n1;
     p += n1;
   }
   din.size = xint(off);
+  // write back the inode
   winode(inum, &din);
 }
