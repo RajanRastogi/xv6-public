@@ -366,30 +366,22 @@ bmap_big(struct inode *in, struct buf *bf, uint bn){
     if(bn >= 127){
         //ensure new data block
         if((addr = data_blk[127]) == 0){
-            //cprintf("--- added new data block ----\n");
             data_blk[127] = addr = balloc(in->dev);
             log_write(bf);
         }
-//        cprintf("Block No: %d, Ours: %x\n", bn, addr);
         bn -= 127;
         brelse(bf); // release old block
         bf = bread(in->dev, addr);
         return bmap_big(in, bf, bn);
     }
-//    cprintf("Reduced block number :%d\n", bn);
 
     if((n_blk_addr = data_blk[bn]) == 0){
         data_blk[bn] = n_blk_addr = balloc(in->dev);
         log_write(bf);
     }
     brelse(bf);
-    if(bn%100==0)
-        cprintf("bn : %d :: ret : %x\n", bn, n_blk_addr);
     return n_blk_addr;
 }
-
-
-
 //PAGEBREAK!
 // Inode content
 //
