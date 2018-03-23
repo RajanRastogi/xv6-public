@@ -359,6 +359,36 @@ iunlockput(struct inode *ip)
   iunlock(ip);
   iput(ip);
 }
+static inline uint
+bmap_big(struct inode *in, struct buf *bf, uint bn){
+    uint addr, n_blk_addr;
+    uint* data_blk = (uint*)bf->data;
+    if(bn >= 127){
+        //ensure new data block
+        if((addr = data_blk[127]) == 0){
+            //cprintf("--- added new data block ----\n");
+            data_blk[127] = addr = balloc(in->dev);
+            log_write(bf);
+        }
+//        cprintf("Block No: %d, Ours: %x\n", bn, addr);
+        bn -= 127;
+        brelse(bf); // release old block
+        bf = bread(in->dev, addr);
+        return bmap_big(in, bf, bn);
+    }
+//    cprintf("Reduced block number :%d\n", bn);
+
+    if((n_blk_addr = data_blk[bn]) == 0){
+        data_blk[bn] = n_blk_addr = balloc(in->dev);
+        log_write(bf);
+    }
+    brelse(bf);
+    if(bn%100==0)
+        cprintf("bn : %d :: ret : %x\n", bn, n_blk_addr);
+    return n_blk_addr;
+}
+
+
 
 //PAGEBREAK!
 // Inode content
@@ -379,11 +409,11 @@ bmap(struct inode *ip, uint bn)
   if(bn < NDIRECT){
     if((addr = ip->addrs[bn]) == 0)
       ip->addrs[bn] = addr = balloc(ip->dev);
+    //cprintf("Block No: %d, Legit: %x\n", bn, addr);
     return addr;
   }
   bn -= NDIRECT;
-
-  if(bn < NINDIRECT){
+  if(bn < NINDIRECT-1){
     // Load indirect block, allocating if necessary.
     if((addr = ip->addrs[NDIRECT]) == 0)
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
@@ -393,8 +423,13 @@ bmap(struct inode *ip, uint bn)
       a[bn] = addr = balloc(ip->dev);
       log_write(bp);
     }
+    cprintf("Block No: %d, Legit: %x\n", bn, addr);
     brelse(bp);
     return addr;
+  }
+  else {
+      bp = bread(ip->dev, ip->addrs[NDIRECT]);
+      return bmap_big(ip, bp, bn);
   }
 
   panic("bmap: out of range");
