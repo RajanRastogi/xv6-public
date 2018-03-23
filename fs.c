@@ -397,7 +397,6 @@ bmap(struct inode *ip, uint bn)
 {
   uint addr;
   struct buf *bp;
-
   if((addr = ip->addrs[0]) == 0)
     ip->addrs[0] = addr = balloc(ip->dev);
  

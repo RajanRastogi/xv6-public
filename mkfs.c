@@ -260,8 +260,8 @@ iappend(uint inum, void *xp, int n)
   struct dinode din;
   char buf[BSIZE];
   uint indirect[NINDIRECT];
-  uint x;
-
+  uint x, l2;
+  printf("in append");
   // Read inode number inum into &din
   rinode(inum, &din);
   // inode might already have some data, offset is the last byte it has
@@ -279,16 +279,23 @@ iappend(uint inum, void *xp, int n)
     // read the sector that contains the 1 level indirect table 
     // into indirect
     rsect(xint(din.addrs[0]), (char*)indirect);
-    // check if the entry already allocated in the table
-    if(indirect[fbn] == 0){
-      // not allocated, allocate a new block and update 
-      // the first level indirect table
-      indirect[fbn] = xint(freeblock++);
-      // write first level table back to disk
-      wsect(xint(din.addrs[0]), (char*)indirect);
+    printf("0 block address: %x\n",din.addrs[0]); 
+    if(fbn > 126){
+      if(indirect[127] == 0){
+        indirect[127] = xint(freeblock++);
+        wsect(xint(din.addrs[0]), (char *)indirect);
+      }
+      l2 = indirect[127];
+      rsect(xint(l2), (char* )indirect);
+      fbn -= 127;
+    } else {
+      l2 = din.addrs[0];
     }
-    // get the sector number
-    x = xint(indirect[fbn]); 
+    if(indirect[fbn] == 0){
+       indirect[fbn] = xint(freeblock++);
+       wsect(xint(l2), (char *) indirect);
+    }
+    x = xint(indirect[fbn]);
     n1 = min(n, (fbn + 1) * BSIZE - off);
     // read sector
     rsect(x, buf);
