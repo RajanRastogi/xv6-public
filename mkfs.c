@@ -271,35 +271,24 @@ iappend(uint inum, void *xp, int n)
     // Get the block number of the last block from the offset
     fbn = off / BSIZE;
     assert(fbn < MAXFILE);
-    // if block number is still inside direct blocks ...
-    if(fbn < NDIRECT){
-      // is block allocated? 
-      if(xint(din.addrs[fbn]) == 0){
-        // no allocate it by incrementing freeblock pointer
-        din.addrs[fbn] = xint(freeblock++);
-      }
-      // allocated ... get the block 
-      x = xint(din.addrs[fbn]);
-    } else {
-      // oh no... it's an indirect block 
-      if(xint(din.addrs[NDIRECT]) == 0){
-        // was first level of indirection allocated? 
-        din.addrs[NDIRECT] = xint(freeblock++);
-      }
-      // read the sector that contains the 1 level indirect table 
-      // into indirect
-      rsect(xint(din.addrs[NDIRECT]), (char*)indirect);
-      // check if the entry already allocated in the table
-      if(indirect[fbn - NDIRECT] == 0){
-        // not allocated, allocate a new block and update 
-        // the first level indirect table
-        indirect[fbn - NDIRECT] = xint(freeblock++);
-        // write first level table back to disk
-        wsect(xint(din.addrs[NDIRECT]), (char*)indirect);
-      }
-      // get the sector number
-      x = xint(indirect[fbn-NDIRECT]);
+    // oh no... it's an indirect block 
+    if(xint(din.addrs[0]) == 0){
+      // was first level of indirection allocated? 
+      din.addrs[0] = xint(freeblock++);
     }
+    // read the sector that contains the 1 level indirect table 
+    // into indirect
+    rsect(xint(din.addrs[0]), (char*)indirect);
+    // check if the entry already allocated in the table
+    if(indirect[fbn] == 0){
+      // not allocated, allocate a new block and update 
+      // the first level indirect table
+      indirect[fbn] = xint(freeblock++);
+      // write first level table back to disk
+      wsect(xint(din.addrs[0]), (char*)indirect);
+    }
+    // get the sector number
+    x = xint(indirect[fbn]); 
     n1 = min(n, (fbn + 1) * BSIZE - off);
     // read sector
     rsect(x, buf);
